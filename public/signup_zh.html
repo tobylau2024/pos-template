@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>POS 管理員註冊</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="common.js"></script>
+</head>
+
+<body class="bg-gray-100 p-4 transition-opacity duration-700 ease-in-out opacity-0">
+  <!-- 🔹 導航列 -->
+  <nav class="bg-blue-500 p-4 text-white flex justify-between items-center">
+    <ul class="flex space-x-4">
+      <li><a href="index_zh.html">首頁</a></li>
+      <li><a href="login_zh.html">登入</a></li>
+      <li><a href="analytics_zh.html">分析</a></li>
+      <li><a href="products_zh.html">管理產品</a></li>
+      <li><a href="vendors_zh.html">管理供應商</a></li>
+      <li><a href="customer-sales_zh.html">記錄顧客銷售</a></li>
+      <li><a href="vendor-loan-record_zh.html">供應商借貨記錄</a></li>
+      <li><a href="product-catalog_zh.html">產品目錄</a></li>
+      
+    </ul>
+  </nav>
+
+  <!-- 🔹 註冊表單 -->
+  <main class="flex-grow flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md">
+      <h1 class="text-2xl font-bold mb-4 text-center">建立管理員帳號</h1>
+
+      <form id="signup-form" class="space-y-4">
+        <div>
+          <label for="email" class="block mb-1 font-medium">電子郵件</label>
+          <input id="email" type="email" required autocomplete="email"
+                 class="w-full border p-2 rounded focus:ring focus:ring-blue-200"
+                 placeholder="請輸入電子郵件" />
+        </div>
+
+        <div>
+          <label for="password" class="block mb-1 font-medium">密碼</label>
+          <input id="password" type="password" required autocomplete="new-password"
+                 class="w-full border p-2 rounded focus:ring focus:ring-blue-200"
+                 placeholder="請輸入密碼" />
+        </div>
+
+        <div>
+          <label for="confirm" class="block mb-1 font-medium">確認密碼</label>
+          <input id="confirm" type="password" required autocomplete="new-password"
+                 class="w-full border p-2 rounded focus:ring focus:ring-blue-200"
+                 placeholder="再次輸入密碼" />
+        </div>
+
+        <button type="submit"
+                class="w-full bg-green-600 hover:bg-green-700 text-white p-2 rounded font-semibold">
+          註冊帳號
+        </button>
+      </form>
+
+      <p id="error" class="text-red-500 mt-4 text-center"></p>
+
+      <div class="mt-6 text-center text-sm text-gray-600">
+        <p>已有帳號？<a href="login_zh.html" class="text-blue-600 hover:underline">登入</a></p>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      console.log("🧩 初始化註冊頁面...");
+      const supabase = await ensureSupabaseClient();
+
+      // ✨ 頁面淡入
+      setTimeout(() => document.body.style.opacity = 1, 100);
+
+      // 🧾 註冊表單邏輯
+      const form = document.getElementById("signup-form");
+      const errorEl = document.getElementById("error");
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+        const confirm = document.getElementById("confirm").value;
+
+        errorEl.textContent = "";
+
+        if (!email || !password || !confirm) {
+          errorEl.textContent = "⚠️ 請填寫所有欄位。";
+          return;
+        }
+
+        if (password !== confirm) {
+          errorEl.textContent = "⚠️ 兩次輸入的密碼不一致。";
+          return;
+        }
+
+        try {
+          const { data, error } = await supabase.auth.signUp({ email, password });
+
+          if (error) {
+            console.error("❌ 註冊失敗：", error);
+            errorEl.textContent = "註冊失敗：" + (error.message || "未知錯誤");
+          } else {
+            console.log("✅ 管理員帳號建立成功：", data);
+            alert("✅ 註冊成功，請前往登入頁面登入。");
+            window.location.href = "login_zh.html?signup=success";
+          }
+        } catch (err) {
+          console.error("❌ 發生錯誤：", err);
+          errorEl.textContent = "發生錯誤：" + err.message;
+        }
+      });
+    });
+  </script>
+</body>
+</html>

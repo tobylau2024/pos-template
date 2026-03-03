@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Products</title>
+
+  <!-- ✅ Tailwind & Supabase -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="common.js"></script>
+</head>
+
+<body class="bg-gray-100 p-4">
+  <!-- 🔹 Navigation -->
+  <nav class="bg-blue-500 p-4 text-white flex justify-between items-center">
+    <ul class="flex flex-wrap space-x-4">
+      <li><a href="index.html">Home</a></li>
+      <li><a href="login.html" data-lang-key="nav-login">Login</a></li>
+      <li data-role="admin,manager">  <a href="analytics.html">Analytics</a></li>
+      <li data-role="admin,manager">  <a href="products.html">Manage Products</a></li>
+      <li data-role="admin,manager">  <a href="vendors.html">Manage Vendors</a></li>
+      <li><a href="customer-sales.html">Record Customer Sales</a></li>
+      <li><a href="vendor-loan-record.html">Vendor Loan Record</a></li>
+      <li><a href="product-catalog.html">Product Catalog</a></li>
+      
+    </ul>
+    <li><a href="products_zh.html">中文版</a></li>
+    <button id="logout-btn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
+  </nav>
+
+  <!-- 🔹 Main Content -->
+  <div class="max-w-6xl mx-auto py-10 px-4">
+    <h1 class="text-3xl font-bold mb-6 text-gray-800">Manage Products</h1>
+
+    <!-- 🔹 Add Product Form -->
+    <form id="add-product-form" class="bg-white rounded-2xl shadow p-6 mb-10">
+      <h2 class="text-xl font-semibold mb-4">Add New Product</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Product Name</label>
+          <input id="name" name="name" required maxlength="100"
+            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200"
+            placeholder="Enter product name" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Barcode (optional)</label>
+          <input id="barcode" name="barcode" maxlength="50"
+            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200"
+            placeholder="(Optional) Barcode" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Buy-In Price</label>
+          <input id="price" name="price" type="number" min="0" step="0.01" required
+            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200"
+            placeholder="Enter buy-in price" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Units</label>
+          <select id="units" name="units" required
+            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200">
+            <option value="">-- Select Unit --</option>
+            <option value="pcs">pcs</option>
+            <option value="box">box</option>
+            <option value="pack">pack</option>
+            <option value="kg">kg</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+          <input id="quantity" name="quantity" type="number" min="0" step="1" required
+            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200"
+            placeholder="Initial stock quantity" />
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Vendor</label>
+          <select id="vendor" name="vendor" required
+            class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200">
+            <option value="">-- Select Vendor --</option>
+          </select>
+        </div>
+      </div>
+      <div class="mt-6">
+        <button type="submit"
+          class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium">
+          ➕ Add Product
+        </button>
+      </div>
+    </form>
+
+    <!-- 🔹 Existing Products Section -->
+    <div class="bg-white rounded-2xl shadow p-6">
+      <div class="flex justify-between items-center mb-4">
+        <h2 class="text-xl font-semibold">Existing Products</h2>
+
+        <!-- ✅ Show/Hide Zero Stock Toggle -->
+        <div class="flex items-center space-x-2">
+          <label class="text-sm font-medium text-gray-700">Show Zero Stock</label>
+          <input type="checkbox" id="toggle-zero-stock"
+            class="h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer" />
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="min-w-full border border-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="border p-2">ID</th>
+              <th class="border p-2">Name</th>
+              <th class="border p-2">Barcode</th>
+              <th class="border p-2">Buy-In Price</th>
+              <th class="border p-2">Units</th>
+              <th class="border p-2">Vendor</th>
+              <th class="border p-2">Batch No.</th>
+              <th class="border p-2">Remaining Qty</th>
+              <th class="border p-2 text-center">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="products-body">
+            <tr><td colspan="9" class="text-center p-4 text-gray-500">Loading...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🔹 Adjust Modal -->
+  <div id="adjust-modal" class="hidden fixed inset-0 bg-gray-900/50 flex items-center justify-center z-50">
+    <div class="bg-white p-6 rounded-xl w-full max-w-md shadow-lg">
+      <h2 class="text-xl font-bold mb-4 text-gray-800">Adjust Product</h2>
+      <form id="adjust-form" onsubmit="applyAdjustProduct(event)">
+        <input type="hidden" id="adjust-id" />
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Buy-In Price</label>
+            <input type="number" id="adjust-price" min="0" step="0.01" required
+              class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200" />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Units</label>
+            <select id="adjust-units" class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200" required>
+              <option value="pcs">pcs</option>
+              <option value="box">box</option>
+              <option value="pack">pack</option>
+              <option value="kg">kg</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+            <input type="number" id="adjust-qty" min="0" step="1" required
+              class="w-full border-gray-300 rounded-lg p-2 focus:ring focus:ring-blue-200" />
+          </div>
+        </div>
+        <div class="flex justify-end space-x-3 mt-6">
+          <button type="button" onclick="hideAdjustProduct()"
+            class="bg-gray-300 hover:bg-gray-400 text-gray-800 px-4 py-2 rounded-lg">Cancel</button>
+          <button type="submit"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">Save</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 🔹 Load Products + Toggle Logic -->
+  <script>
+    document.addEventListener("DOMContentLoaded", async () => {
+      const supabase = await ensureSupabaseClient();
+
+  // 🔒 Auth Guard
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    window.location.href = "login.html";
+    return;
+  }
+const role = await getUserRole();
+  if (!role || (role !== "admin" && role !== "manager")) {
+    alert("Access denied! You don’t have permission to manage products.");
+    window.location.href = "index.html";
+    return;
+  }
+
+  applyRoleRestrictions(role);
+
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "login.html";
+    });
+  }
+
+  console.log("✅ Authenticated, initializing Manage Products...");
+      await loadVendors();
+      const toggle = document.getElementById("toggle-zero-stock");
+      toggle.checked = false; // Default: hide zero-stock items
+      await loadProducts(toggle.checked);
+
+      toggle.addEventListener("change", () => {
+        loadProducts(toggle.checked); // if checked → show zero-stock, unchecked → hide them
+      });
+    });
+
+const barcodeInput = document.getElementById("barcode");
+  if (barcodeInput) {
+    let debounce;
+    barcodeInput.addEventListener("input", () => {
+      clearTimeout(debounce);
+      debounce = setTimeout(() => {
+        autofillProductNameByBarcode(barcodeInput.value);
+      }, 400); // debounce typing/scanning
+    });
+  }
+    
+  </script>
+</body>
+</html>
