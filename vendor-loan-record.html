@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en" id="lang-body" class="lang-en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title data-lang-key="nav-vendor-loan-record">Vendor Loan Record</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="common.js"></script>
+  <script src="vendor-loan-record.js"></script>
+</head>
+<body class="bg-gray-100 p-4 transition-opacity duration-700 ease-in-out opacity-0">
+  <nav class="bg-blue-500 p-4 text-white flex justify-between items-center">
+  <ul class="flex space-x-4">
+    <li><a href="index.html" data-lang-key="nav-home">Home</a></li>
+    <li><a href="login.html" data-lang-key="nav-login">Login</a></li>
+    <li data-role="admin,manager">  <a href="analytics.html">Analytics</a></li>
+    <li data-role="admin,manager">  <a href="products.html">Manage Products</a></li>
+    <li data-role="admin,manager">  <a href="vendors.html">Manage Vendors</a></li>
+    <li><a href="customer-sales.html" data-lang-key="nav-record-customer-sales">Record Customer Sales</a></li>
+    <li><a href="vendor-loan-record.html" data-lang-key="nav-vendor-loan-record">Vendor Loan Record</a></li>
+    <li><a href="product-catalog.html" data-lang-key="nav-product-catalog">Product Catalog</a></li>
+    
+  </ul>
+    <li><a href="vendor-loan-record_zh.html">中文版</a></li>
+  <!-- 🔒 Logout button -->
+  <button id="logout-btn" class="bg-red-500 px-3 py-1 rounded hover:bg-red-600">Logout</button>
+</nav>
+
+  <h1 data-lang-key="vendor-loan-record" class="text-2xl font-bold mb-4">Vendor Loan Record</h1>
+  <div id="error" class="text-red-500 mb-4 font-bold text-lg"></div>
+  <div id="message" class="text-green-500 mb-4 font-bold text-lg"></div>
+  <div id="loading" class="text-blue-500 mb-4" style="display: none;">Loading...</div>
+
+  <form id="add-loan-record-form" class="mb-4 bg-white p-4 rounded shadow">
+    <h2 data-lang-key="add-loan-record" class="text-xl font-semibold mb-4">Add Loan Record</h2>
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label for="vendor-name" data-lang-key="vendor-name" class="block">Vendor Name</label>
+        <select id="vendor-name" class="border p-2 w-full" required>
+          <option value="" disabled selected data-lang-key="vendor-name">Select a vendor</option>
+        </select>
+      </div>
+      <div>
+        <label for="product-select" data-lang-key="select-product" class="block">Select Product (or input barcode)</label>
+        <select id="product-select" class="border p-2 w-full" required>
+          <option value="" data-lang-key="select-product">-- Select a Product --</option>
+        </select>
+      </div>
+      <div>
+        <label for="product-barcode" data-lang-key="product-barcode" class="block">Product Barcode</label>
+        <input type="text" id="product-barcode" class="border p-2 w-full" />
+        <div id="stock-display" class="text-sm text-gray-600"></div>
+      </div>
+      <div>
+        <label for="batch-no" data-lang-key="batch-no" class="block">Batch No.</label>
+        <select id="batch-no" class="border p-2 w-full" required>
+          <option value="" data-lang-key="batch-no">-- Select Batch No. --</option>
+        </select>
+      </div>
+      <div>
+        <label for="quantity" data-lang-key="quantity" class="block">Quantity</label>
+        <input type="number" id="quantity" min="1" pattern="[0-9]*" class="border p-2 w-full" required />
+      </div>
+      <div>
+        <label for="selling-price" data-lang-key="selling-price" class="block">Selling Price</label>
+        <input type="number" id="selling-price" step="0.01" pattern="[0-9]*\\.?[0-9]*" class="border p-2 w-full" required />
+      </div>
+      <div>
+        <label for="loan-date" data-lang-key="loan-date" class="block">Loan Date</label>
+        <input type="date" id="loan-date" class="border p-2 w-full" required />
+      </div>
+    </div>
+    <button type="submit" data-lang-key="add-loan" class="bg-blue-500 text-white p-2 rounded mt-4 hover:bg-blue-600">Add Loan</button>
+  </form>
+
+  <table id="loan-records-table" class="w-full bg-white rounded shadow">
+    <thead>
+      <tr class="bg-gray-200">
+        <th class="border p-2" data-lang-key="vendor-name">Vendor Name</th>
+        <th class="border p-2" data-lang-key="product-name">Product Name</th>
+        <th class="border p-2" data-lang-key="batch-no">Batch No.</th>
+        <th class="border p-2" data-lang-key="quantity">Quantity</th>
+        <th class="border p-2" data-lang-key="selling-price">Selling Price</th>
+        <th class="border p-2" data-lang-key="loan-date">Loan Date</th>
+        <th class="border p-2" data-lang-key="actions">Actions</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log("DOM fully loaded and parsed", new Date().toISOString());
+
+  const supabase = await ensureSupabaseClient();
+
+  // 🔒 Auth Guard
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) {
+    console.warn("❌ Not logged in. Redirecting...");
+    window.location.href = "login.html";
+    return;
+  }
+
+const role = await getUserRole();
+applyRoleRestrictions(role);
+  // ✅ Reveal page AFTER everything is ready
+requestAnimationFrame(() => {
+  document.body.style.opacity = 1;
+});
+  // 🔑 Logout button
+  const logoutBtn = document.getElementById("logout-btn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      await supabase.auth.signOut();
+      window.location.href = "login.html";
+    });
+  }
+
+  console.log("✅ Authenticated, initializing page...");
+
+  // 🧩 Initialize page functions ONCE
+  applyTranslations();
+  await loadLoanRecords();
+  await populateProductDropdown();
+  await populateVendorDropdown();
+
+  const form = document.getElementById("add-loan-record-form");
+  if (form) form.addEventListener("submit", addLoanRecord);
+
+  const langToggle = document.getElementById("toggle-language");
+  if (langToggle) langToggle.addEventListener("click", toggleLanguage);
+
+  // Input validation
+  const quantityInput = document.getElementById("quantity");
+  const sellingPriceInput = document.getElementById("selling-price");
+  [quantityInput, sellingPriceInput].forEach(input => {
+    if (input) {
+      input.addEventListener("input", () => {
+        input.value = input.value.replace(/[^0-9.]/g, '');
+      });
+    }
+  });
+  // ✨ 頁面淡入
+    setTimeout(() => document.body.style.opacity = 1, 100);
+});
+</script>
+</body>
+</html>
