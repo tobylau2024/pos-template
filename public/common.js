@@ -20,8 +20,8 @@ function ensureSupabaseClient() {
     console.log("🔑 Initializing Supabase Client...");
     if (typeof supabase === "undefined") throw new Error("Supabase SDK missing");
     supabaseClient = supabase.createClient(
-      "https://aouduygmcspiqauhrabx.supabase.co",
-      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFvdWR1eWdtY3NwaXFhdWhyYWJ4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNTM5MzAsImV4cCI6MjA2MDgyOTkzMH0.s8WMvYdE9csSb1xb6jv84aiFBBU_LpDi1aserTQDg-k"
+      "https://yddbleatipqkgvygrykd.supabase.co",
+      "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlkZGJsZWF0aXBxa2d2eWdyeWtkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI0MDMwMTIsImV4cCI6MjA4Nzk3OTAxMn0.AxKy9PEci19VEf8IChkNEMW7Uk_cCp8S3aCtKJqxvx8"
     );
   }
   return supabaseClient;
